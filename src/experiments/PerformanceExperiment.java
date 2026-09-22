@@ -9,6 +9,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 
+/**
+ * Timed comparison of Algorithm A vs Algorithm B (section 3.8):
+ * for each (text length, action count) pair, run 5 repetitions of
+ * random INSERT/DELETE/REPLACE, then Undo all, then Redo all — and
+ * average the timing and operation counts into results/experiment_results.csv.
+ */
 public class PerformanceExperiment {
 
     private static final int[] TEXT_LENGTHS = {100, 1_000, 10_000, 100_000};
@@ -30,38 +36,29 @@ public class PerformanceExperiment {
 
     private static void runTrial(int textLen, int actionCount, String algo, PrintWriter out) {
         long totalTime = 0, totalPush = 0, totalPop = 0, totalCmp = 0, totalAux = 0;
+
         for (int r = 0; r < REPETITIONS; r++) {
             TextEditor editor = algo.equals("A") ? new SnapshotEditor() : new CommandEditor();
-            String seed = randomString(textLen);
-            editor.insert(0, seed);
+            editor.insert(0, randomString(textLen));
             editor.resetCounters();
 
             Random rnd = new Random(42 + r);
             long start = System.nanoTime();
-            for (int i = 0; i < actionCount; i++) {
-                applyRandomAction(editor, rnd);
-            }
-            for (int i = 0; i < actionCount; i++) {
-                editor.undo();
-            }
-            for (int i = 0; i < actionCount; i++) {
-                editor.redo();
-            }
-            long end = System.nanoTime();
+            for (int i = 0; i < actionCount; i++) applyRandomAction(editor, rnd);
+            for (int i = 0; i < actionCount; i++) editor.undo();
+            for (int i = 0; i < actionCount; i++) editor.redo();
+            long elapsed = System.nanoTime() - start;
 
-            totalTime += (end - start);
+            totalTime += elapsed;
             totalPush += editor.getPushCount();
             totalPop += editor.getPopCount();
             totalCmp += editor.getComparisonCount();
             totalAux += editor.getAuxiliaryCharCount();
         }
-        out.printf("%d,%d,%s,%d,%d,%d,%d,%d%n",
-                textLen, actionCount, algo,
-                totalTime / REPETITIONS,
-                totalPush / REPETITIONS,
-                totalPop / REPETITIONS,
-                totalCmp / REPETITIONS,
-                totalAux / REPETITIONS);
+
+        out.printf("%d,%d,%s,%d,%d,%d,%d,%d%n", textLen, actionCount, algo,
+                totalTime / REPETITIONS, totalPush / REPETITIONS, totalPop / REPETITIONS,
+                totalCmp / REPETITIONS, totalAux / REPETITIONS);
     }
 
     private static void applyRandomAction(TextEditor editor, Random rnd) {
@@ -70,25 +67,19 @@ public class PerformanceExperiment {
             editor.insert(0, "x");
             return;
         }
-        int type = rnd.nextInt(3);
         int pos = rnd.nextInt(len);
-        if (type == 0) {
-            editor.insert(pos, "x");
-        } else if (type == 1 && len > 0) {
-            int maxLen = Math.min(3, len - pos);
-            editor.delete(pos, Math.max(1, maxLen));
-        } else {
-            int maxLen = Math.min(3, len - pos);
-            editor.replace(pos, Math.max(1, maxLen), "yz");
+        int maxLen = Math.max(1, Math.min(3, len - pos));
+        switch (rnd.nextInt(3)) {
+            case 0  -> editor.insert(pos, "x");
+            case 1  -> editor.delete(pos, maxLen);
+            default -> editor.replace(pos, maxLen, "yz");
         }
     }
 
     private static String randomString(int length) {
         StringBuilder sb = new StringBuilder(length);
         Random rnd = new Random(1);
-        for (int i = 0; i < length; i++) {
-            sb.append((char) ('a' + rnd.nextInt(26)));
-        }
+        for (int i = 0; i < length; i++) sb.append((char) ('a' + rnd.nextInt(26)));
         return sb.toString();
     }
 }

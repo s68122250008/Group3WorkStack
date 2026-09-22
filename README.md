@@ -2,7 +2,13 @@
 
 Group 3 — Text Editor: Snapshot vs Command/Delta (Undo/Redo with Stack), Java.
 
-## Build & Run (requires JDK, e.g. `sudo apt install default-jdk`)
+## Requirements
+
+- **JDK 14 or newer** (e.g. `sudo apt install default-jdk`, which installs a recent version on
+  modern Ubuntu). The source code uses arrow-style `switch` expressions (`case X -> ...`),
+  a Java 14+ feature. Check your version with `java -version` before building.
+
+## Build & Run
 
 ```bash
 cd src
@@ -31,6 +37,12 @@ src/
 results/
   experiment_results.csv          - measured results (see report Chapter 7 for methodology note)
   performance_chart.png           - comparison charts
+diagrams/
+  flowchart_algorithmA.png, flowchart_algorithmB.png, class_diagram.png
+report/
+  Stack_Group03_Report.pdf
+presentation/
+  Stack_Group03_Presentation.pptx
 ```
 
 ## Note on this repository
@@ -42,3 +54,7 @@ JDK compiler. Please compile and run with a real JDK before submission and re-ge
 `experiment_results.csv` with actual `javac`/`java` timings — the relative trends
 (Algorithm B faster and more memory-efficient than Algorithm A on large documents)
 should match, per Big-O analysis in the report.
+
+The code was later refactored for brevity and readability (shared bounds-checking helper,
+arrow-style `switch`, fewer comments) without changing any user-facing behavior or output
+messages — all 18 test cases in `Stack_Group03_TestCases.xlsx` still apply as-is.
